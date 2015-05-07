@@ -44,18 +44,19 @@ def help():
 def rerank(region, category):
 	query = request.args.get("q","*")
 
-	print app.config["AMAZON_ACCESS_KEY"]
-	print app.config["AMAZON_SECRET_KEY"]
-	print app.config["AMAZON_ASSOC_TAG"] 
+	amazon = AmazonAPI(app.config["AMAZON_ACCESS_KEY"], app.config["AMAZON_SECRET_KEY"], app.config["AMAZON_ASSOC_TAG"], region=region.upper())
+	products = amazon.search(Keywords=query, SearchIndex=category.capitalize())
 
-	amazon = AmazonAPI(app.config["AMAZON_ACCESS_KEY"], app.config["AMAZON_SECRET_KEY"], app.config["AMAZON_ASSOC_TAG"], region=region)
-
-	products = amazon.search(Keywords=query, SearchIndex=category)
-
-	print products
 	results = []
-
-	response = ""
+	response = """
+	<!DOCTYPE html>
+	<html lang="en">
+ 	<head>
+		<meta charset="utf-8">
+    	<title>RAMA</title>
+  	</head>
+  	<body>
+	"""
 
 	for i, product in enumerate(products):
 		url = product.reviews[1]
@@ -73,14 +74,15 @@ def rerank(region, category):
 			bayesian_average = (reviews * avg_rating + prior_weight * prior_avg_rating)/(reviews + prior_weight)
 			
 			results.append((bayesian_average, reviews, avg_rating, product.title))
-			response += "%d,%d,%f,%s" % (i, reviews, avg_rating, product.title)
+			response += "<p>%d,%d,%f,%s</p>" % (i, reviews, avg_rating, product.title)
 		except (IndexError, KeyError) as e:
-			response += "%s" % e
-			response += "%d,%s" % (i, product.title)
+			response += "<p>%s</p>" % e
+			response += "<p>%d,%s</p>" % (i, product.title)
 
 	for i, result in enumerate(sorted(results, reverse=True)):
-		response += "%d,%s" % (i, result)  	
+		response += "<p>%d,%s</p>" % (i, result)  	
 
+	response += "</body></html>"	
 	return response	
 
 if __name__ == "__main__":
