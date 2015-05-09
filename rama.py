@@ -15,6 +15,7 @@ from flask import Flask
 from flask import request
 from flask import Response
 import json
+import futures
 app = Flask(__name__)
 app.config.from_object("config")
 app.debug = True
@@ -36,7 +37,17 @@ def convert_to_json(product):
 		"image_url" : product.small_image_url,
 		"reviews_url" : product.reviews[1]})
 
-
+def extract_rating_data(url):
+	try:
+		print url
+		rp = requests.get(url, timeout=10)
+		soup = BeautifulSoup(rp.content) 
+		avg_rating = float(soup.find_all("img")[1]["title"].split()[0])
+		reviews = int(soup.b.text.split()[0].replace(",","").replace(".",""))
+		return (avg_rating, reviews)
+	except (IndexError, KeyError, requests.exceptions.RequestException) as e:
+		return (0.0, 0)
+			
 @app.route("/")
 def hello():
     return "RAMA - Reranking Amazon search results since 2015!"
@@ -67,13 +78,18 @@ def search(region, category):
 
 @app.route("/<region>/<category>")
 def rerank(region, category):
+	print region, category
 	query = request.args.get("q","*")
 
 	amazon = AmazonAPI(app.config["AMAZON_ACCESS_KEY"], app.config["AMAZON_SECRET_KEY"], app.config["AMAZON_ASSOC_TAG"], region=region.upper())
-	products = amazon.search(Keywords=query, SearchIndex=category.capitalize())
+	amazon_results_iterator = amazon.search(Keywords=query, SearchIndex=category.capitalize())
+
+	# convert the iterator to a list so we can loop through it multiple times
+	# see http://stackoverflow.com/questions/3266180/can-iterators-be-reset-in-python
+	products = list(amazon_results_iterator)
 
 	results = []
-	response = """
+	html = """
 	<!DOCTYPE html>
 	<html lang="en">
  	<head>
@@ -82,36 +98,36 @@ def rerank(region, category):
   	</head>
   	<body>
 	"""
+	
+	with futures.ProcessPoolExecutor(max_workers=10) as executor:
+		ratings = list(executor.map(extract_rating_data, [product.reviews[1] for product in products]))
+
+	# ratings = list(map(extract_rating_data, [product.reviews[1] for product in products]))	
 
 	for i, product in enumerate(products):
-		url = product.reviews[1]
-		rp = requests.get(product.reviews[1], timeout=10)
-		soup = BeautifulSoup(rp.content)
-		try:
-			# print url
-			# print soup.find_all("img") 
-			avg_rating = float(soup.find_all("img")[1]["title"].split()[0])
-
-			# print soup.b.text
-			reviews = int(soup.b.text.split()[0].replace(",","").replace(".",""))
-
-			score = bayesian_average(avg_rating, reviews)
-			
-			results.append((score, reviews, avg_rating, product.title, product.price_and_currency, product.offer_url, product.small_image_url))
-			# response += "<p>%d,%d,%f,%s</p>" % (i, reviews, avg_rating, product.title)
-		except (IndexError, KeyError) as e:
-			pass
-			# response += "<p>%s</p>" % e
-			# response += "<p>%d,%s</p>" % (i, product.title)
+		avg_rating, reviews = ratings[i]
+		score = bayesian_average(avg_rating, reviews)
+		
+		results.append((score, reviews, avg_rating, product.title, product.price_and_currency, product.offer_url, product.small_image_url))
 
 	for i, (score, reviews, rating, title, price, url, image_url) in enumerate(sorted(results, reverse=True)):
-		response += '<p><a href="%s"><img src="%s" alt="%s" />%s</a>%s<meter max="5.0" min="0.0" value="%f">%f</meter></p>' % (url, image_url, title, title, price,score, score)  	
+		# Aaargh!! This cost me hours to figure it out:
+		# <img src="None"/> causes the browser to call http://127.0.0.1:8080/DE/None leading to weird errors
+		# So better replace "None" with an empty string
+		if not image_url:
+			image_url = ""
+		html += '<p><a href="%s"><img src="%s" alt="%s" />%s</a>%s<meter max="5.0" min="0.0" value="%f">%f</meter></p>' % (url, image_url, title, title, price,score, score)  	
 
-	response += "</body></html>"	
-	return response	
+	html += "</body></html>"
+
+	resp = Response(html, status=200, mimetype='text/html')
+
+	return resp
 
 if __name__ == "__main__":
-    app.run()
+	# default flask port 5000 is used by Airplay on OS X
+	# see http://stackoverflow.com/questions/26668294/airplay-messes-up-localhost
+    app.run(port=8080)
 
 # <div class="container">
 
