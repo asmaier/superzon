@@ -13,6 +13,7 @@ import json
 import futures
 import lxml.html as lh
 from amazon.api import AmazonAPI
+import redis
 
 from flask import Flask
 from flask import request
@@ -27,6 +28,8 @@ app.debug = True
 # average rating of prior_avg_rating
 prior_weight = 10
 prior_avg_rating = 3
+
+r_server = redis.Redis("localhost")
 
 def bayesian_average(avg_rating, reviews):
 	# see also http://en.wikipedia.org/wiki/Bayes_estimator#Practical_example_of_Bayes_estimators
@@ -89,7 +92,7 @@ def rerank(region, category):
 
 	search_start=time.time()
 	amazon = AmazonAPI(app.config["AMAZON_ACCESS_KEY"], app.config["AMAZON_SECRET_KEY"], app.config["AMAZON_ASSOC_TAG"], region=region.upper())
-	amazon_results_iterator = amazon.search(Keywords=query, SearchIndex=category.capitalize())
+	amazon_results_iterator = amazon.search(Keywords=query, SearchIndex=category)
 	# convert the iterator to a list so we can loop through it multiple times
 	# see http://stackoverflow.com/questions/3266180/can-iterators-be-reset-in-python
 	products = list(amazon_results_iterator)
