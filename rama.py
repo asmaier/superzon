@@ -6,16 +6,18 @@
 ## - Reranking Amazon search results since 2015 -
 ##########
 
+import time
 import argparse
 import requests
-from bs4 import BeautifulSoup
+import json
+import futures
+import lxml.html as lh
 from amazon.api import AmazonAPI
 
 from flask import Flask
 from flask import request
 from flask import Response
-import json
-import futures
+
 app = Flask(__name__)
 app.config.from_object("config")
 app.debug = True
@@ -39,11 +41,14 @@ def convert_to_json(product):
 
 def extract_rating_data(url):
 	try:
-		print url
 		rp = requests.get(url, timeout=10)
-		soup = BeautifulSoup(rp.content) 
-		avg_rating = float(soup.find_all("img")[1]["title"].split()[0])
-		reviews = int(soup.b.text.split()[0].replace(",","").replace(".",""))
+
+		tree = lh.fromstring(rp.content)
+		# find the first image with title attribute
+		avg_rating = float(tree.xpath(".//img/@title")[0].split()[0])
+		# get text of first <b> tag
+		# replace "," and "." to allow conversion to int
+		reviews = int(tree.xpath(".//b")[0].text.split()[0].replace(",","").replace(".",""))
 		return (avg_rating, reviews)
 	except (IndexError, KeyError, requests.exceptions.RequestException) as e:
 		return (0.0, 0)
@@ -78,15 +83,17 @@ def search(region, category):
 
 @app.route("/<region>/<category>")
 def rerank(region, category):
+	starttime = time.time()
 	print region, category
 	query = request.args.get("q","*")
 
+	search_start=time.time()
 	amazon = AmazonAPI(app.config["AMAZON_ACCESS_KEY"], app.config["AMAZON_SECRET_KEY"], app.config["AMAZON_ASSOC_TAG"], region=region.upper())
 	amazon_results_iterator = amazon.search(Keywords=query, SearchIndex=category.capitalize())
-
 	# convert the iterator to a list so we can loop through it multiple times
 	# see http://stackoverflow.com/questions/3266180/can-iterators-be-reset-in-python
 	products = list(amazon_results_iterator)
+	print "search time: ", time.time() - search_start
 
 	results = []
 	html = """
@@ -99,10 +106,11 @@ def rerank(region, category):
   	<body>
 	"""
 	
-	with futures.ProcessPoolExecutor(max_workers=10) as executor:
+	worker_start = time.time()
+	with futures.ThreadPoolExecutor(max_workers=32) as executor:
 		ratings = list(executor.map(extract_rating_data, [product.reviews[1] for product in products]))
-
 	# ratings = list(map(extract_rating_data, [product.reviews[1] for product in products]))	
+	print "process time:", time.time() - worker_start
 
 	for i, product in enumerate(products):
 		avg_rating, reviews = ratings[i]
@@ -121,6 +129,8 @@ def rerank(region, category):
 	html += "</body></html>"
 
 	resp = Response(html, status=200, mimetype='text/html')
+
+	print "response time: ", time.time() - starttime
 
 	return resp
 
