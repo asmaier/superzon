@@ -29,6 +29,7 @@ app.debug = True
 prior_weight = 10
 prior_avg_rating = 3
 
+TTL = 86400  # 24 * 3600s = 1d
 r_server = redis.Redis("localhost")
 
 def bayesian_average(avg_rating, reviews):
@@ -44,17 +45,33 @@ def convert_to_json(product):
 
 def extract_rating_data(url):
 	try:
-		rp = requests.get(url, timeout=10)
+		# iframe_time = time.time()
+		content = r_server.get(url)
+		if not content:
+			# print "Cache miss!" 
+			rp = requests.get(url, timeout=10)
+			content = rp.content
+			r_server.setex(url, content, TTL)
 
-		tree = lh.fromstring(rp.content)
+		# print "download iframe time:", time.time() - iframe_time	
+
+		# parse_time = time.time()
+		tree = lh.fromstring(content)
 		# find the first image with title attribute
 		avg_rating = float(tree.xpath(".//img/@title")[0].split()[0])
 		# get text of first <b> tag
 		# replace "," and "." to allow conversion to int
 		reviews = int(tree.xpath(".//b")[0].text.split()[0].replace(",","").replace(".",""))
+		# print "parse time:", time.time() - parse_time
 		return (avg_rating, reviews)
 	except (IndexError, KeyError, requests.exceptions.RequestException) as e:
 		return (0.0, 0)
+
+def write_query_to_db(cache_url, data):
+	r_server.setex(cache_url, data, TTL)
+
+def read_query_from_db(cache_url):
+	return r_server.get(cache_url)	
 			
 @app.route("/")
 def hello():
@@ -91,7 +108,12 @@ def rerank(region, category):
 	query = request.args.get("q","*")
 
 	search_start=time.time()
-	amazon = AmazonAPI(app.config["AMAZON_ACCESS_KEY"], app.config["AMAZON_SECRET_KEY"], app.config["AMAZON_ASSOC_TAG"], region=region.upper())
+	amazon = AmazonAPI(app.config["AMAZON_ACCESS_KEY"], 
+		app.config["AMAZON_SECRET_KEY"], 
+		app.config["AMAZON_ASSOC_TAG"], 
+		Region=region.upper(),
+		CacheReader=read_query_from_db,
+		CacheWriter=write_query_to_db)
 	amazon_results_iterator = amazon.search(Keywords=query, SearchIndex=category)
 	# convert the iterator to a list so we can loop through it multiple times
 	# see http://stackoverflow.com/questions/3266180/can-iterators-be-reset-in-python
@@ -127,7 +149,7 @@ def rerank(region, category):
 		# So better replace "None" with an empty string
 		if not image_url:
 			image_url = ""
-		html += '<p><a href="%s"><img src="%s" alt="%s" />%s</a>%s<meter max="5.0" min="0.0" value="%f">%f</meter></p>' % (url, image_url, title, title, price,score, score)  	
+		html += '<p><a href="%s"><img src="%s" alt="%s" />%s</a>%s<meter max="5.0" min="1.0" value="%f"></meter>%s, Reviews: %s</p>' % (url, image_url, title, title, price,score, score, reviews)  	
 
 	html += "</body></html>"
 
