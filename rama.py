@@ -6,11 +6,13 @@
 ## - Reranking Amazon search results since 2015 -
 ##########
 
+import os
 import time
 import argparse
-import requests
 import json
-import futures
+
+import requests
+import concurrent.futures as futures
 import lxml.html as lh
 from amazon.api import AmazonAPI
 import redis
@@ -20,8 +22,22 @@ from flask import request
 from flask import Response
 
 app = Flask(__name__)
-app.config.from_object("config")
-app.debug = True
+
+app.debug = False
+
+# we are not at heroku
+if not 'DYNO' in os.environ: 
+	app.debug=True
+	app.config.from_object("config")
+	KEY = app.config["AMAZON_ACCESS_KEY"] 
+	SECRET = app.config["AMAZON_SECRET_KEY"] 
+	TAG = app.config["AMAZON_ASSOC_TAG"]
+else:
+	KEY = os.environ.get("AMAZON_ACCESS_KEY")
+	SECRET = os.environ.get("AMAZON_SECRET_KEY")
+	TAG = os.environ.get("AMAZON_ASSOC_TAG")	
+
+print KEY, SECRET, TAG	
 
 # We assume that if no votes are given, that
 # the product is rated by prior_weight people with a 
@@ -31,6 +47,13 @@ prior_avg_rating = 3
 
 TTL = 86400  # 24 * 3600s = 1d
 r_server = redis.Redis("localhost")
+
+redis_on = False
+try:
+	r_server.ping()
+	redis_on = True
+except redis.ConnectionError:
+	print "Redis is not available!"	
 
 def bayesian_average(avg_rating, reviews):
 	# see also http://en.wikipedia.org/wiki/Bayes_estimator#Practical_example_of_Bayes_estimators
@@ -46,12 +69,16 @@ def convert_to_json(product):
 def extract_rating_data(url):
 	try:
 		# iframe_time = time.time()
-		content = r_server.get(url)
+
+		content = None
+		if redis_on:
+			content = r_server.get(url)
 		if not content:
 			# print "Cache miss!" 
 			rp = requests.get(url, timeout=10)
 			content = rp.content
-			r_server.setex(url, content, TTL)
+			if redis_on:
+				r_server.setex(url, content, TTL)
 
 		# print "download iframe time:", time.time() - iframe_time	
 
@@ -93,7 +120,7 @@ def help():
 def search(region, category):
 	query = request.args.get("q","*")
 
-	amazon = AmazonAPI(app.config["AMAZON_ACCESS_KEY"], app.config["AMAZON_SECRET_KEY"], app.config["AMAZON_ASSOC_TAG"], region=region.upper())
+	amazon = AmazonAPI(KEY, SECRET, TAG, Region=region.upper())
 	products = amazon.search(Keywords=query, SearchIndex=category.capitalize())
 
 	js = json.dumps([convert_to_json(product) for product in products])
@@ -107,13 +134,14 @@ def rerank(region, category):
 	print region, category
 	query = request.args.get("q","*")
 
+	cache_reader = None
+	cache_writer = None
+	if redis_on:
+		cache_reader = read_query_from_db
+		cache_writer = write_query_to_db
+
 	search_start=time.time()
-	amazon = AmazonAPI(app.config["AMAZON_ACCESS_KEY"], 
-		app.config["AMAZON_SECRET_KEY"], 
-		app.config["AMAZON_ASSOC_TAG"], 
-		Region=region.upper(),
-		CacheReader=read_query_from_db,
-		CacheWriter=write_query_to_db)
+	amazon = AmazonAPI(KEY, SECRET, TAG, Region=region.upper(), CacheReader=cache_reader, CacheWriter=cache_writer)
 	amazon_results_iterator = amazon.search(Keywords=query, SearchIndex=category)
 	# convert the iterator to a list so we can loop through it multiple times
 	# see http://stackoverflow.com/questions/3266180/can-iterators-be-reset-in-python

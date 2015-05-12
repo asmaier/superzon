@@ -1,0 +1,13 @@
+bottlenose==0.6.2
+Flask==0.10.1
+futures==3.0.2
+itsdangerous==0.24
+Jinja2==2.7.3
+lxml==3.4.4
+MarkupSafe==0.23
+-e git+https://github.com/yoavaviram/python-amazon-simple-product-api.git@f7348fdd8bb1e04fbdfadec3b1f74ff2339e3b5e#egg=python_amazon_simple_product_api-master
+python-dateutil==2.4.2
+redis==2.10.3
+requests==2.7.0
+six==1.9.0
+Werkzeug==0.10.4
