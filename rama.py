@@ -35,9 +35,7 @@ if not 'DYNO' in os.environ:
 else:
 	KEY = os.environ.get("AMAZON_ACCESS_KEY")
 	SECRET = os.environ.get("AMAZON_SECRET_KEY")
-	TAG = os.environ.get("AMAZON_ASSOC_TAG")	
-
-print KEY, SECRET, TAG	
+	TAG = os.environ.get("AMAZON_ASSOC_TAG")		
 
 # We assume that if no votes are given, that
 # the product is rated by prior_weight people with a 
