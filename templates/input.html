@@ -1,0 +1,116 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		
+		<link href='http://fonts.googleapis.com/css?family=Open+Sans:400,600' rel='stylesheet' type='text/css'>
+		<link href='http://fonts.googleapis.com/css?family=Roboto:400,700,500' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" type="text/css" href="{{ url_for("static",filename="style.css") }}" title="orange"/>
+
+		<title>RAMA</title>
+	</head>
+	<body>
+		<h1>RAMA</h1>
+		<p>Reranking Amazon search results since 2015!</p>
+		<br/>
+		<form action="{{ url_for("rerank") }}" method="get" accept-charset="utf-8">
+			<input type="text" name="q" size="40" value="*" />
+			<br/>
+			<br/>
+			<button type="submit">search</button>
+			<br/>
+			<br/>
+			<select name="region">
+  				<option value="CA">Canada</option>
+  				<option value="CH">China</option>
+  				<option value="FR">France</option>
+  				<option value="DE">Germany</option>
+  				<option value="IN">India</option>
+  				<option value="IT">Italy</option>
+  				<option value="JP">Japan</option>
+  				<option value="ES">Spain</option>
+  				<option value="UK">United Kingdom</option>
+  				<option value="US">USA</option>
+			</select>
+			<br/>
+			<select name="category">
+  				<option>All</option>
+  				<option>Apparel</option>
+  				<option>Appliances</option>
+  				<option>ArtsAndCrafts</option>
+  				<option>Automotive</option>
+
+  				<option>Baby</option>
+  				<option>Beauty</option>
+  				<option>Blended</option>
+  				<option>Books</option>
+
+  				<option>Classical</option>
+  				<option>Collectibles</option>
+
+  				<option>DVD</option>
+  				<option>DigitalMusic</option>
+
+  				<option>Electronics</option>
+
+  				<option>ForeignBooks</option>
+
+  				<option>GiftCards</option>
+  				<option>GourmetFood</option>
+  				<option>Grocery</option>
+
+  				<option>HealthPersonalCare</option>
+  				<option>Hobbies</option>
+  				<option>HomeGarden</option>
+  				<option>HomeImprovement</option>
+
+  				<option>Industrial</option>
+
+  				<option>Jewelry</option>
+
+  				<option>KindleStore</option>
+  				<option>Kitchen</option>
+
+  				<option>LawnAndGarden</option>
+  				<option>Lighting</option>
+  				<option>Luggage</option>
+
+  				<option>Marketplace</option>
+  				<option>MP3Downloads</option>
+  				<option>Magazines</option>
+  				<option>Miscellaneous</option>
+  				<option>MobileApps</option>
+  				<option>Music</option>
+  				<option>MusicTracks</option>
+  				<option>MusicalInstruments</option>
+
+  				<option>OfficeProducts</option>
+  				<option>OutdoorLiving</option>
+  				<option>Outlet</option>
+
+  				<option>PCHardware</option>
+  				<option>PetSupplies</option>
+  				<option>Photo</option>
+
+  				<option>Shoes</option>
+  				<option>Software</option>
+  				<option>SoftwareVideoGames</option>
+  				<option>SportingGoods</option>
+
+  				<option>Tools</option>
+  				<option>Toys</option>
+
+  				<option>UnboxVideo</option>
+
+  				<option>VHS</option>
+  				<option>Video</option>
+  				<option>VideoDownload</option>
+  				<option>VideoGames</option>
+
+  				<option>Watches</option>
+  				<option>Wireless</option>
+  				<option>WirelessAccessories</option>
+			</select>
+		</form>
+	</body>
+</html>

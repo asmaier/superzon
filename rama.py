@@ -20,6 +20,7 @@ import redis
 from flask import Flask
 from flask import request
 from flask import Response
+from flask import render_template
 
 app = Flask(__name__)
 
@@ -100,7 +101,7 @@ def read_query_from_db(cache_url):
 			
 @app.route("/")
 def hello():
-    return "RAMA - Reranking Amazon search results since 2015!"
+	return render_template("input.html")
 
 @app.route("/help")
 def help():
@@ -126,9 +127,11 @@ def search(region, category):
 
 	return resp
 
-@app.route("/<region>/<category>")
-def rerank(region, category):
+@app.route("/results")
+def rerank():
 	starttime = time.time()
+	region = request.args.get("region", "DE")
+	category = request.args.get("category", "All")
 	print region, category
 	query = request.args.get("q","*")
 
