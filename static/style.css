@@ -1,31 +1,113 @@
+/* see also http://asmaier.github.io/startup/index.html?s=678179044742 */
+
 body
 {
-    background-color: #FF9900; /* #ffaa00; */
-    margin: 40px;
+    background-color: #BB7000;
     text-align: center;
     font-family: 'Roboto', sans-serif;
     /*font-family: 'Open Sans', sans-serif;*/
     font-size: 20px;
     color: #FEFBF5;
+    margin: 0;
+    height: 100%;
+}
+
+#top {
+    background-color: #FFD597;
+    height: 5em;
+}
+
+#content {
+    background-color: #FF9900;
+    margin-bottom: 5em;
+    padding-bottom: 7em;
+}
+
+#title {
+    font-family: 'Roboto', sans-serif;
+      /*font-family: 'Source Sans Pro', Nobile, 'Droid Serif', Helvetica, Charcoal;*/
+    font-size: 11rem;
+    font-weight: 900;
+    line-height: 0.85em;
+    letter-spacing: -4px;
+    text-transform: capitalize;
+    font-variant: small-caps;
+    text-shadow: 0 1px 3px rgba(0,0,0,.5);
+    padding-top: 0.8em;
+    margin-top: 0;
+    margin-bottom: 0.2em;
+    background-color: #FF9900;
+}
+
+#lead {
+    font-weight: bold;
+    line-height: 1.5em;
+    font-size: 1.3em;
+    font-family: Roboto;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 3px rgba(0,0,0,.5);
+    margin: 0 0 10px;
 }
 
 input
 {
     font-family: 'Roboto', sans-serif;
     /*font-family: 'Open Sans', sans-serif;*/
-    font-size: 100%;
-
+    font-size: 1em;
+    width: 50%;
+    text-align: center;
+    padding: 3px;
+    border-radius: 5px;
+    border: 1px solid;
+    border-color: #BB7000;
 }
 
-input[type="text"], textarea {
+/*input[type="text"], textarea {
 
   background-color : #FEFBF5; 
 
-}
+}*/
 
 button
 {
     font-family: 'Roboto', sans-serif;
     /*font-family: 'Open Sans', sans-serif;*/
-    font-size: 100%;
+    font-size: 1em;
+    font-weight: 600;
+    border-radius: 6px;
+    /*background-color: #BB7000;*/
+    background-color: #FFD597;
+    box-shadow: none;
+    text-shadow: none;
+    padding: 10px 64px;
+    line-height: 1.3333333;
+    color: #241600;
+    /*color: #FEFBF5;*/
+    border: none;
+    background-image: none;
+    border: 1px solid;
+    border-color: #BB7000;
+}
+
+select {
+    /*display: block;*/
+    -webkit-appearance: menulist;
+    -moz-appearance: menulist;
+    appearance: menulist;
+    border:none;
+    /*border-radius: 0;*/
+    /*font-size: 1em;*/
+    font-weight: 600;
+    height: 34px;
+    width: 10%;
+    /*background-color: #BB7000;*/
+    background-color: #FFD597;
+    color: #241600;
+    /*color: #FEFBF5;*/
+    font-size: 14px;
+    line-height: 1.42857143;
+    text-align: center;
+    margin: auto;
+    border: 1px solid;
+    border-color: #BB7000;
 }

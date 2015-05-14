@@ -10,16 +10,17 @@
 		<title>RAMA</title>
 	</head>
 	<body>
-		<h1>RAMA</h1>
-		<p>Reranking Amazon search results since 2015!</p>
-		<br/>
+  <div id="top"></div>
+  <div id="content">
+		<h1 id="title">RAMA</h1>
+		<p id="lead">Reranking Amazon search results since 2015!</p>
 		<form action="{{ url_for("rerank") }}" method="get" accept-charset="utf-8">
 			<input type="text" name="q" size="40" value="*" />
 			<br/>
 			<br/>
 			<button type="submit">search</button>
 			<br/>
-			<br/>
+      <br/>
 			<select name="region">
   				<option value="CA">Canada</option>
   				<option value="CH">China</option>
@@ -32,7 +33,6 @@
   				<option value="UK">United Kingdom</option>
   				<option value="US">USA</option>
 			</select>
-			<br/>
 			<select name="category">
   				<option>All</option>
   				<option>Apparel</option>
@@ -112,5 +112,6 @@
   				<option>WirelessAccessories</option>
 			</select>
 		</form>
+    </div>
 	</body>
 </html>
