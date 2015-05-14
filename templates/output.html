@@ -6,9 +6,18 @@
 		<link rel="stylesheet" type="text/css" href="{{ url_for("static",filename="style.css") }}" title="orange" />
 		<title>RAMA</title>
 	</head>
-	<body>
-		{% for (score, reviews, rating, title, price, url, image_url) in results %}
-		<p><a href="{{ url }}"><img src="{{ image_url if image_url != None else '' }}" alt="{{ title }}" />{{ title }}</a>{{ price }}<meter max="5.0" min="1.0" value="{{ score }}"></meter>{{ score }}, Reviews: {{ reviews }}</p>
+	<body><div id="output">
+	<ol id="results">
+	{% for (score, reviews, rating, title, price, url, image_url) in results %}
+		<li>
+		<a href="{{ url }}"><img src="{{ image_url if image_url != None else '' }}" alt="{{ title }}" /></a>
+		<br/>
+		<a href="{{ url }}">{{ title }}</a> 
+		<br/>
+		RAMA Rating: {{ score | round(2) }}, Reviews: {{ reviews }}
+		<br/>
+		<span class="price">{{ price[0] }} {{ price[1] }}</span>
+		</li>
 		{% endfor %}
-	</body>
+</ol></div></body>
 </html>
