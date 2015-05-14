@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link href='http://fonts.googleapis.com/css?family=Roboto:400,700,500' rel='stylesheet' type='text/css' />
+		<link rel="stylesheet" type="text/css" href="{{ url_for("static",filename="style.css") }}" title="orange" />
+		<title>RAMA</title>
+	</head>
+	<body>
+		{% for (score, reviews, rating, title, price, url, image_url) in results %}
+		<p><a href="{{ url }}"><img src="{{ image_url if image_url != None else '' }}" alt="{{ title }}" />{{ title }}</a>{{ price }}<meter max="5.0" min="1.0" value="{{ score }}"></meter>{{ score }}, Reviews: {{ reviews }}</p>
+		{% endfor %}
+	</body>
+</html>

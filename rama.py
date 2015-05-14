@@ -150,15 +150,6 @@ def rerank():
 	print "search time: ", time.time() - search_start
 
 	results = []
-	html = """
-	<!DOCTYPE html>
-	<html lang="en">
- 	<head>
-		<meta charset="utf-8">
-    	<title>RAMA</title>
-  	</head>
-  	<body>
-	"""
 	
 	worker_start = time.time()
 	with futures.ThreadPoolExecutor(max_workers=32) as executor:
@@ -172,21 +163,9 @@ def rerank():
 		
 		results.append((score, reviews, avg_rating, product.title, product.price_and_currency, product.offer_url, product.small_image_url))
 
-	for i, (score, reviews, rating, title, price, url, image_url) in enumerate(sorted(results, reverse=True)):
-		# Aaargh!! This cost me hours to figure it out:
-		# <img src="None"/> causes the browser to call http://127.0.0.1:8080/DE/None leading to weird errors
-		# So better replace "None" with an empty string
-		if not image_url:
-			image_url = ""
-		html += '<p><a href="%s"><img src="%s" alt="%s" />%s</a>%s<meter max="5.0" min="1.0" value="%f"></meter>%s, Reviews: %s</p>' % (url, image_url, title, title, price,score, score, reviews)  	
-
-	html += "</body></html>"
-
-	resp = Response(html, status=200, mimetype='text/html')
-
 	print "response time: ", time.time() - starttime
 
-	return resp
+	return render_template("output.html", results=sorted(results, reverse=True))
 
 if __name__ == "__main__":
 	# default flask port 5000 is used by Airplay on OS X
