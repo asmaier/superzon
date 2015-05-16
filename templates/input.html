@@ -7,14 +7,23 @@
 		<link href='http://fonts.googleapis.com/css?family=Roboto:400,700,500' rel='stylesheet' type='text/css' />
 		<link rel="stylesheet" type="text/css" href="{{ url_for("static",filename="style.css") }}" title="orange"/>
 
+    <script type="text/javascript">// <![CDATA[
+        function loading(){
+            document.getElementById("loading").style.display = "block";
+            document.getElementById("content").style.display = "none";
+        }
+// ]]></script>
 		<title>RAMA</title>
 	</head>
-	<body>
-  <div id="top"></div>
+  <!-- see http://stackoverflow.com/questions/158319/cross-browser-onload-event-and-the-back-button -->
+	<body onunload="">
+  <div id="loading"></div>
   <div id="content">
+  <div id="top"></div>
+  <div id="center">
 		<h1 id="title">RAMA</h1>
 		<p id="lead">Reranking Amazon search results since 2015!</p>
-		<form action="{{ url_for("rerank") }}" method="get" accept-charset="utf-8">
+		<form id="bigform" action="{{ url_for("rerank") }}" method="get" accept-charset="utf-8">
 			<input type="text" name="q" size="40" value="*" />
 			<br/>
       <br/>
@@ -110,8 +119,9 @@
 			</select>
       <br/>
       <br/>
-      <button type="submit">search</button>
+      <button type="submit" onclick="loading();">search</button>
 		</form>
+    </div>
     </div>
 	</body>
 </html>

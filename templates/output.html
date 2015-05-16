@@ -6,7 +6,8 @@
 		<link rel="stylesheet" type="text/css" href="{{ url_for("static",filename="style.css") }}" title="orange" />
 		<title>RAMA</title>
 	</head>
-	<body><div id="output">
+	<body>
+	<div id="output">
 	<ol id="results">
 	{% for (score, reviews, rating, title, price, url, image_url) in results %}
 		<li>
