@@ -45,7 +45,9 @@ prior_weight = 10
 prior_avg_rating = 3
 
 TTL = 86400  # 24 * 3600s = 1d
-r_server = redis.Redis("localhost")
+
+redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
+r_server = redis.from_url(redis_url)
 
 redis_on = False
 try:
