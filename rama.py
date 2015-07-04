@@ -24,7 +24,7 @@ from flask import render_template
 
 app = Flask(__name__)
 
-app.debug = True
+app.debug = False
 
 # we are not at heroku
 if not 'DYNO' in os.environ: 
@@ -154,7 +154,7 @@ def rerank():
 	results = []
 	
 	worker_start = time.time()
-	with futures.ThreadPoolExecutor(max_workers=4) as executor:
+	with futures.ThreadPoolExecutor(max_workers=32) as executor:
 		ratings = list(executor.map(extract_rating_data, [product.reviews[1] for product in products]))
 	# ratings = list(map(extract_rating_data, [product.reviews[1] for product in products]))	
 	print "process time:", time.time() - worker_start
