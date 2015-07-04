@@ -154,7 +154,7 @@ def rerank():
 	results = []
 	
 	worker_start = time.time()
-	with futures.ThreadPoolExecutor(max_workers=10) as executor:
+	with futures.ThreadPoolExecutor(max_workers=8) as executor:
 		ratings = list(executor.map(extract_rating_data, [product.reviews[1] for product in products]))
 	# ratings = list(map(extract_rating_data, [product.reviews[1] for product in products]))	
 	print "process time:", time.time() - worker_start
