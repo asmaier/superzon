@@ -24,7 +24,7 @@ from flask import render_template
 
 app = Flask(__name__)
 
-app.debug = False
+app.debug = True
 
 # we are not at heroku
 if not 'DYNO' in os.environ: 
