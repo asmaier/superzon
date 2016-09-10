@@ -8,14 +8,17 @@
 
 import os
 import time
-import argparse
 import json
 
 import requests
 import concurrent.futures as futures
+import lxml
 import lxml.html as lh
 from amazon.api import AmazonAPI
 import redis
+
+import project.http.requests.proxy.requestProxy as rpx
+import socket
 
 from flask import Flask
 from flask import request
@@ -36,7 +39,7 @@ if not 'DYNO' in os.environ:
 else:
 	KEY = os.environ.get("AMAZON_ACCESS_KEY")
 	SECRET = os.environ.get("AMAZON_SECRET_KEY")
-	TAG = os.environ.get("AMAZON_ASSOC_TAG")		
+	TAG = os.environ.get("AMAZON_ASSOC_TAG")
 
 # We assume that if no votes are given, that
 # the product is rated by prior_weight people with a 
@@ -50,6 +53,12 @@ redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r_server = redis.from_url(redis_url)
 
 redis_on = False
+# Accessing Amazon via random proxies can (especially in combination with cached results from redis)
+# increase the number of returned results. But it is 10 times slower.
+proxy_on = False
+if proxy_on:
+	proxy = rpx.RequestProxy()
+
 try:
 	r_server.ping()
 	redis_on = True
@@ -74,26 +83,53 @@ def extract_rating_data(url):
 		content = None
 		if redis_on:
 			content = r_server.get(url)
+			if content:
+				return parseRating(content)
 		if not content:
 			# print "Cache miss!" 
-			rp = requests.get(url, timeout=10)
-			content = rp.content
-			if redis_on:
-				r_server.setex(url, content, TTL)
+			#
+			count=0
+			while True:
+				try:
+					count = count + 1
+					# print count, url
+					if proxy_on:
+						rp = proxy.generate_proxied_request(url, req_timeout=5)
+						if rp:
+							content = rp.content
+						else:
+							content = ""
+					else:
+						content = requests.get(url, timeout=10).content
+					# print "download iframe time:", time.time() - iframe_time
+					avg_rating, reviews = parseRating(content)
 
-		# print "download iframe time:", time.time() - iframe_time	
-
-		# parse_time = time.time()
-		tree = lh.fromstring(content)
-		# find the first image with title attribute
-		avg_rating = float(tree.xpath(".//img/@title")[0].split()[0])
-		# get text of first <b> tag
-		# replace "," and "." to allow conversion to int
-		reviews = int(tree.xpath(".//b")[0].text.split()[0].replace(",","").replace(".",""))
-		# print "parse time:", time.time() - parse_time
-		return (avg_rating, reviews)
-	except (IndexError, KeyError, requests.exceptions.RequestException) as e:
+					# if no exceptions we can write the result to redis
+					if redis_on:
+						r_server.setex(url, content, TTL)
+					# print "parse time:", time.time() - parse_time
+					return (avg_rating, reviews)
+				except:
+					if count > 3:
+						raise
+					else:
+						continue
+				break
+	except (IndexError, KeyError, requests.exceptions.RequestException, lxml.etree.XMLSyntaxError, socket.error) as e:
+		# print e, url
 		return (0.0, 0)
+
+
+def parseRating(content):
+	# parse_time = time.time()
+	tree = lh.fromstring(content)
+	# find the first image with title attribute
+	avg_rating = float(tree.xpath(".//img/@title")[0].split()[0])
+	# get text of first <b> tag
+	# replace "," and "." to allow conversion to int
+	reviews = int(tree.xpath(".//b")[0].text.split()[0].replace(",", "").replace(".", ""))
+	return avg_rating, reviews
+
 
 def write_query_to_db(cache_url, data):
 	r_server.setex(cache_url, data, TTL)
@@ -154,17 +190,21 @@ def rerank():
 	results = []
 	
 	worker_start = time.time()
+	# concurrent
 	with futures.ThreadPoolExecutor(max_workers=32) as executor:
 		ratings = list(executor.map(extract_rating_data, [product.reviews[1] for product in products]))
-	# ratings = list(map(extract_rating_data, [product.reviews[1] for product in products]))	
+	# non-concurrent
+	# ratings = list(map(extract_rating_data, [product.reviews[1] for product in products]))
 	print "process time:", time.time() - worker_start
 
 	for i, product in enumerate(products):
 		avg_rating, reviews = ratings[i]
-		score = bayesian_average(avg_rating, reviews)
-		
-		results.append((score, reviews, avg_rating, product.title, product.price_and_currency, product.offer_url, product.small_image_url))
+		# do not show products without any reviews
+		if reviews > 0:
+			score = bayesian_average(avg_rating, reviews)
+			results.append((score, reviews, avg_rating, product.title, product.price_and_currency, product.offer_url, product.small_image_url))
 
+	print "Number of products found: ", len(results)
 	print "response time: ", time.time() - starttime
 
 	return render_template("output.html", results=sorted(results, reverse=True))

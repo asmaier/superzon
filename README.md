@@ -24,3 +24,6 @@ After git checkout:
 
 
     $ open localhost:8080
+
+
+To shutdown redis use `redis-cli shutdown`.
