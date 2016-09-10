@@ -1,1 +1,1 @@
-web: gunicorn rama:app --log-file=-
+web: gunicorn superzon:app --log-file=-

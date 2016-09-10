@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 ##########
-## RAMA 
-## - Reranking Amazon search results since 2015 -
+## Superzon
+## - Supercharging Amazon search results since 2015 -
 ##########
 
 import os
