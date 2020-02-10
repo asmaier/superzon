@@ -3,8 +3,9 @@ After git checkout:
 1. Install heroku toolbelt, see https://devcenter.heroku.com/articles/heroku-command-line
 2. Install python requirements, see https://devcenter.heroku.com/articles/getting-started-with-python#declare-app-dependencies
 
-
-    $ pip install -r requirements.txt
+    $ python3 -m venv env-superzon
+    $ source env-superzon/bin/activate
+    $ pip3 install -r requirements.txt
 
 3. Install redis
 
